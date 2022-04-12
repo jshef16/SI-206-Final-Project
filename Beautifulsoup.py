@@ -12,13 +12,16 @@ def get_data():
     url = 'https://copenhagenizeindex.eu/'
     resp = requests.get(url)
     soup = BeautifulSoup(resp.content, 'html.parser')
-    city_dict = {}  
-    cities = soup.find_all('div', class_ = 'city-info')
-    for city in cities:
-        city_name = city.find('div', class_ = 'name colorize').text.strip()
-    scores = soup.find_all('div', class_ = 'city-score')
-    for score in scores:
-        city_score = city.find('div', class_ = 'total-score total-score--sm').text.strip()
+    city_list = []  
+    table = soup.find('div', class_ = 'items')
+    specific_cities = table.find_all('a', class_ = 'link')
+    for specific_city in specific_cities:
+        city_rank = specific_city.find('div', class_ = 'index19').text.strip()
+        city_name = specific_city.find('div', class_ = 'name colorize').text.strip()
+        city_score = specific_city.find('div', class_ = 'total-score total-score--sm').text.strip()
+        city_list.append((city_rank, city_name, city_score))
+    print(city_list)
+    return(city_list)
 
 def main():
     get_data()
