@@ -1,9 +1,15 @@
+from asyncore import write
 from itertools import count
+from turtle import color
 import unittest
 import sqlite3
 import json
 import os
 import requests
+import matplotlib.pyplot as plt
+import numpy as np
+
+
 
 def readfile():
     pass
@@ -48,8 +54,10 @@ def addBikes(cur, conn, bikes_dict):
     # get last id inserted into the table
     cur.execute("SELECT * FROM Bikes")
     res = cur.fetchall()
+    # if no entries in the table, target gets set to 0
     if len(res) == 0:
         i = 0
+    # otherwise, get the id of the last row, add 25 to get target
     else:
         i = res[-1][0] + 1
     target = i + 25
@@ -59,6 +67,7 @@ def addBikes(cur, conn, bikes_dict):
     for row in range(25):
         if i < target and i < len(bike_list):
             id = i
+
             name = bike_list[i]['name']
             cur.execute("SELECT id FROM Names WHERE name = ?", (name,))
             name_id = cur.fetchone()[0]
@@ -128,10 +137,57 @@ def addNames(cur, conn, bikes_dict):
             cur.execute("INSERT OR IGNORE INTO Names (name) VALUES (?)", (name,))
         conn.commit()
 
+def getCounts(cur, conn):
+    cur.execute("SELECT Cities.name, Countries.name, COUNT(*) FROM Bikes JOIN Cities ON Bikes.city = Cities.id JOIN Countries ON Bikes.country = Countries.id GROUP BY city")
+    res = cur.fetchall()
+    return res
 
+def getMaxCount(count_list):
+    max = 0
+    max_city = []
 
+    for row in count_list:
+        if row[2] > max:
+            max_city.clear()
+            max_city.append((row[0], row[1]))
+            max = row[2]
+        elif row[2] == max:
+            max_city.append((row[0], row[1]))
+    return (max, max_city)
 
+def writeData(counts):
+    f = open("bike_data.csv", "w")
 
+    f.write("CITY,COUNTRY,NUMBER OF BIKES\n")
+    for row in counts:
+        f.write(str(row[0]) + "," + str(row[1]) + "," + str(row[2]) + "\n")
+
+    f.close()
+
+def bikesByCompany(cur, conn):
+    cur.execute("SELECT Companies.name, COUNT(*) FROM Bikes JOIN Companies ON Bikes.company = Companies.id GROUP BY company")
+    res = cur.fetchall()
+    res.sort(key = lambda x: x[1], reverse=True) 
+    companies = []
+    counts = []
+    for row in res[:10]:
+        # if row[1] < 9:
+        #     continue
+        # else:
+        #     companies.append(row[0])
+        #     counts.append(row[1])
+        companies.append(row[0])
+        counts.append(row[1])
+
+    fig, ax = plt.subplots()
+    fig.patch.set_facecolor('yellow')
+    ax.stem(companies, counts, linefmt='yellow')
+    ax.patch.set_facecolor('blue')
+    ax.set_xlabel('Company Names')
+    ax.set_ylabel('Bikes per Company')
+    ax.set_title('TOP 10 EBIKE COMPANIES IN THE WORLD')
+    plt.xticks(rotation = 90) 
+    plt.show()
 
 def main():
     # create database
@@ -152,6 +208,10 @@ def main():
         addCompanies(cur, conn, bikes_dict)
         addNames(cur, conn, bikes_dict)
         addBikes(cur, conn, bikes_dict)
+    counts = getCounts(cur, conn)
+    max_cities = getMaxCount(counts)
+    writeData(counts)
+    bikesByCompany(cur, conn)
 
 
 
