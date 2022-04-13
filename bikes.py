@@ -186,7 +186,8 @@ def bikesByCompany(cur, conn):
     ax.set_xlabel('Company Names')
     ax.set_ylabel('Bikes per Company')
     ax.set_title('TOP 10 EBIKE COMPANIES IN THE WORLD')
-    plt.xticks(rotation = 90) 
+    plt.xticks(rotation = 70) 
+    plt.tight_layout()
     plt.show()
 
 def main():
