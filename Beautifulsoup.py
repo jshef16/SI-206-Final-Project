@@ -12,7 +12,7 @@ from statistics import stdev
 from statistics import mean
 from statistics import median
 import numpy as np
-import pandas as pd
+from scipy.stats import kde
 
 def get_data():
     url = 'https://copenhagenizeindex.eu/'
@@ -56,6 +56,13 @@ def score_lst(city_list):
         score = float(score_)
         scores.append(score)
     return(scores)
+
+def rank_lst(city_list):
+    ranks = []
+    for item in city_list:
+        rank = int(item[0])  
+        ranks.append(rank)
+    return(ranks)
 
 def stats(scores):
     stats = []
@@ -106,16 +113,36 @@ def stats_visual(scores_stats):
     plt.xlabel('Stats')
     plt.ylabel('Scores')
     plt.savefig('Statistics of the Copenhagenize Index')
-    plt.show()   
+    plt.show()  
+
+def kernal_estimate_visual(ranks, scores):
+    fig = plt.figure(1, figsize=(10, 10))
+    ax = fig.add_subplot(1, 1, 1)
+    ax.set_facecolor('yellow')
+    nbins=300
+    x = np.array(ranks)
+    y = np.array(scores)
+    k = kde.gaussian_kde([x,y])
+    xi, yi = np.mgrid[x.min() : x.max() : nbins * 1j, y.min() : y.max() : nbins*1j]
+    zi = k(np.vstack([xi.flatten(), yi.flatten()]))
+    plt.pcolormesh(xi, yi, zi.reshape(xi.shape), shading='auto')
+    plt.colorbar()
+    ax.set_xlabel('Rank')
+    ax.set_ylabel('Scores')
+    plt.suptitle('Kernel Density Estimate - Rank & Scores')
+    plt.xticks(range(1,21))
+    plt.show()
 
 def main():
     city_list = get_data()
     write_csv(city_list, 'websiteoutput.csv')
     cities = city_lst(city_list)
     scores = score_lst(city_list)
+    ranks = rank_lst(city_list)
     scores_stats = stats(scores)
     city_score_visual(cities, scores)
     stats_visual(scores_stats)
+    kernal_estimate_visual(ranks, scores)
 
 if __name__ == "__main__":
     main()
